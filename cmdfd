@@ -1,0 +1,27 @@
+#!/bin/sh
+
+share="$HOME/.local/share/cmdfd"
+apropos_list="$share/apropos.list"
+custom_list="$share/custom.list"
+ex='vi -es'
+
+print_help() {
+    echo "--help  -h      Print this help.";
+    echo "--update        Build database of available commands.";
+}
+
+update_db() {
+    apropos -s 1 '' |\
+        $ex -c '%/./ norm Wdf)f-s-:-' -c '%p' -c ':q!' /dev/stdin >\
+        "$apropos_list"
+}
+
+[ "$1" = '-h' ] && print_help && exit;
+[ "$1" = '--help' ] && print_help && exit;
+[ "$1" = '--update' ] && update_db && exit;
+
+[ ! -e "$apropos_list" ] && update_db;
+[ ! -e "$custom_list" ] && touch "$custom_list";
+
+selected_cmd=$(cat "$apropos_list" "$custom_list" | fzf | sed 's/\s-:-.*//')
+[ "$selected_cmd" ] && $selected_cmd "$*"
